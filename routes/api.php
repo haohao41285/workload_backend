@@ -9,3 +9,5 @@ Route::middleware('jwt.refresh')->get('/token/refresh', 'AuthController@refresh'
 
 Route::resource('task', 'TaskController');
 Route::post('task-search', 'TaskController@search');
+
+Route::resource('board','BoardController');
