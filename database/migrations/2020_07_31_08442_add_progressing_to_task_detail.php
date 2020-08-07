@@ -12,7 +12,7 @@ class AddProgressingToTaskDetail extends Migration {
 	 */
 	public function up() {
 		Schema::table('task_details', function (Blueprint $table) {
-			$table->tinyInteger('progressing')->after('status');
+			$table->tinyInteger('progressing')->after('status')->nullable();
 		});
 	}
 

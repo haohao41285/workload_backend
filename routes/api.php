@@ -9,5 +9,8 @@ Route::middleware('jwt.refresh')->get('/token/refresh', 'AuthController@refresh'
 
 Route::resource('task', 'TaskController');
 Route::post('task-search', 'TaskController@search');
+Route::post('task-total', 'TaskController@searchTotal');
 
-Route::resource('board','BoardController');
+Route::resource('board','BoardController')->only(['index','store','destroy']);
+Route::post('/board-update','BoardController@update');
+Route::post('/board-search','BoardController@search');
