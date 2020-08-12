@@ -1,6 +1,5 @@
 # git clone
 # composer install
+# composer dump-autoload
 # cp .env.example .env
-# create database
-# php artisan migrate
 # php artisan serve
