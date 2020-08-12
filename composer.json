@@ -11,6 +11,7 @@
         "php": "^7.1.3",
         "doctrine/dbal": "^2.10",
         "fideloper/proxy": "^4.0",
+        "google/apiclient": "^2.7",
         "guzzlehttp/guzzle": "^7.0",
         "laravel/framework": "5.8.*",
         "laravel/tinker": "^1.0",
@@ -41,6 +42,10 @@
         "classmap": [
             "database/seeds",
             "database/factories"
+        ],
+        "files" : [
+            "App/Helpers/Functions.php",
+            "App/Helpers/GoogleSpreadSheet.php"
         ]
     },
     "autoload-dev": {

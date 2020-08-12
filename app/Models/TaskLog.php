@@ -12,6 +12,10 @@ class TaskLog extends Model {
 		'comment',
 		'date_work',
 		'id_user',
-		'task_id',
+		'id_task',
 	];
+
+	public function task() {
+		return $this->belongsTo(task::class, 'id_task', 'id');
+	}
 }

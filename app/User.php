@@ -14,7 +14,10 @@ class User extends Authenticatable implements JWTSubject {
 	 * @var array
 	 */
 	protected $fillable = [
-		'name', 'email', 'password', '_token_api',
+		'name', 'email', 'password', '_token_api', 'team_id',
+		'key', 'token', // Trello
+		'full_name',
+		'id_trello', // user id of trello
 	];
 
 	/**
@@ -32,5 +35,12 @@ class User extends Authenticatable implements JWTSubject {
 
 	public function getJWTCustomClaims() {
 		return [];
+	}
+
+	public function team() {
+		return $this->belongsTo('App\Models\Team', 'team_id', 'id');
+	}
+	public function tasks() {
+		return $this->hasMany('App\Models\TaskDetail', 'user_id', 'id');
 	}
 }
