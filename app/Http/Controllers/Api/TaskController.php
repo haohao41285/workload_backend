@@ -161,6 +161,7 @@ class TaskController extends Controller {
 				$finish_date = now()->format('Y-m-d H:i:s');
 				$due = \Carbon\Carbon::parse($task_info->due);
 				$different_date = \Carbon\Carbon::parse($finish_date)->diffInDays($due);
+				$task_detail->task->update(['date_finish' => $finish_date]);
 			} else {
 				$finish_date = "";
 				$different_date = "";
@@ -234,7 +235,7 @@ class TaskController extends Controller {
 	public function searchTotal(Request $request) {
 		try {
 			$data = $request->all();
-			$tasks = task::with('tasks_details');
+			$tasks = task::with('tasks_details')->where('status', '!=', 3);
 			$tasks = $tasks->whereHas('tasks_details', function ($q) use ($data) {
 				$q->where('user_id', $data['user_id']);
 			});

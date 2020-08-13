@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\BoardTrello;
+use App\Models\Project;
 use App\Models\TableTrello;
 use App\User;
 use DB;
@@ -30,8 +31,13 @@ class BoardController extends Controller {
 					];
 				}
 			}
+			$projects = Project::where(function ($query) {
+				$query->where('status', 1)
+					->orWhere('status', 2);
+			})
+				->latest()->get();
 			$users = User::all();
-			return response()->json(['lists' => $lists, 'boards' => $boards, 'users' => $users]);
+			return response()->json(['lists' => $lists, 'boards' => $boards, 'users' => $users, 'projects' => $projects]);
 		} catch (\Exception $e) {
 			\Log::info($e);
 			return response()->json(['status' => 'error', 'message' => 'Get boards Failed!']);

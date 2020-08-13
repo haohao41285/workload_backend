@@ -32,3 +32,9 @@ Route::group(['prefix' => 'report'], function () {
 	Route::post('/search', 'ReportController@search');
 	Route::post('/get-user', 'ReportController@getUser');
 });
+
+//Project
+Route::group(['prefix' => 'project'], function () {
+	Route::post('/search', 'ProjectController@search');
+});
+Route::resource('project', 'ProjectController');

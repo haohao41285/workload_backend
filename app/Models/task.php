@@ -12,6 +12,8 @@ class task extends Model {
 		'idBoard', // id from board_trellos table
 		'id_trello', // id card from Trello
 		'created_by',
+		'id_project',
+		'date_finish',
 
 	];
 

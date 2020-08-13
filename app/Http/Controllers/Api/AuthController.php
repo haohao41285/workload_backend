@@ -34,7 +34,7 @@ class AuthController extends Controller {
 				]);
 			}
 
-			$data = User::where("email", $request->email)->first();
+			$data = User::where("email", $request->email)->with('team')->first();
 			//Insert or update _token_api
 			User::where('email', $request->email)->update(['_token_api' => $token]);
 			DB::commit();
