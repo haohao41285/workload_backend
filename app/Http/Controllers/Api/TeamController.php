@@ -67,7 +67,14 @@ class TeamController extends Controller {
 	 * @return \Illuminate\Http\Response
 	 */
 	public function show($id) {
-		//
+		try {
+			$teams_user = User::select('id', 'name', 'email')->where('team_id', $id)->get();
+			$users = User::select('id', 'name', 'email')->whereNull('team_id')->get();
+			return response()->json(['users' => $users, 'teams_user' => $teams_user, 'status' => "success", 'message' => 'Team\'s user below!']);
+		} catch (\Exception $e) {
+			\Log::info($e);
+			return response()->json(['status' => 'error', 'Get Team\'s User Failed!']);
+		}
 	}
 
 	/**
@@ -152,6 +159,47 @@ class TeamController extends Controller {
 		} catch (\Exception $e) {
 			\Log::info($e);
 			return response()->json(['status' => 'error', 'message' => 'Get Teams, Leader Failed!']);
+		}
+	}
+	public function addUserToTeam(Request $request) {
+		try {
+			$id_user = $request->id;
+			$id_team = $request->id_team;
+
+			//Check User
+			$user = User::find($id_user);
+			if ($user->team_id != null) {
+				return response()->json(['status' => 'error', 'message' => 'Add User to Team Failed! This User is inside other team!']);
+			}
+			$user->update(['team_id' => $id_team]);
+
+			$teams_user = User::select('name', 'email', 'id')->where('team_id', $id_team)->latest()->get();
+			$user_list = User::select('name', 'email', 'id')->whereNull('team_id')->latest()->get();
+			return response()->json(['status' => 'success', 'message' => 'Add User to Team Successfully!', 'teams_user' => $teams_user, 'user_list' => $user_list]);
+		} catch (\Exception $e) {
+			\Log::info($e);
+			return response()->json(['status' => 'error', 'message' => 'Add User to Team Failed!']);
+		}
+	}
+
+	public function removeUserOutTeam(Request $request) {
+		try {
+			$id_user = $request->id;
+			$id_team = $request->id_team;
+
+			$user = User::find($id_user);
+			if ($user->team_id != $id_team) {
+				return response()->json(['status' => 'error', 'message' => 'Remove User Failed!']);
+			}
+			$user->update(['team_id' => Null]);
+
+			$teams_user = User::select('name', 'email', 'id')->where('team_id', $id_team)->latest()->get();
+			$user_list = User::select('name', 'email', 'id')->whereNull('team_id')->latest()->get();
+
+			return response()->json(['status' => 'success', 'message' => 'Remove User Successfully!', 'teams_user' => $teams_user, 'user_list' => $user_list]);
+		} catch (\Exception $e) {
+			\log::info($e);
+			return response()->json(['status' => 'error', 'message' => 'Remove User Failed!']);
 		}
 	}
 }

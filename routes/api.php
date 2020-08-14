@@ -14,17 +14,25 @@ Route::post('task-total', 'TaskController@searchTotal');
 Route::get('detail_task/{id_board}', 'TaskController@detail_task');
 Route::post('task-calculate', 'TaskController@calculate');
 Route::post('extend', 'TaskController@extendTask');
+
 //Boards
 Route::resource('board', 'BoardController')->only(['index', 'store', 'destroy']);
 Route::post('/board-update', 'BoardController@update');
 Route::post('/board-search', 'BoardController@search');
+
 //Users
 Route::resource('user', 'UserController')->only(['update', 'destroy', 'index']);
+
 Route::post('user-search', 'UserController@search');
 //Teams
+Route::group(['prefix' => 'team'], function () {
+	Route::post('search', 'TeamController@search');
+	Route::get('leader', 'TeamController@teamsLeader');
+	Route::post('add-user-to-team', 'TeamController@addUserToTeam');
+	Route::post('remove-user-out-team', 'TeamController@removeUserOutTeam');
+});
 Route::resource('team', 'TeamController');
-Route::post('team-search', 'TeamController@search');
-Route::get('teams-leader', 'TeamController@teamsLeader');
+
 //Task Logs
 Route::resource('log', 'LogTaskController')->only(['store', 'index']);
 //Report
