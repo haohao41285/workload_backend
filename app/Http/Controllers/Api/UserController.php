@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\UpdateUserRequest;
 use App\Models\Team;
 use App\User;
 use Illuminate\Http\Request;
@@ -73,8 +72,32 @@ class UserController extends Controller {
 	 * @param  int  $id
 	 * @return \Illuminate\Http\Response
 	 */
-	public function update(UpdateUserRequest $request, $id) {
-		return $request->all();
+	public function update(Request $request, $id) {
+		try {
+			$rule = [
+				'name' => 'required|unique:users,name,' . $id,
+			];
+			$validator = \Validator::make($request->all(), $rule);
+			if ($validator->fails()) {
+				return response()->json([
+					'status' => 'error',
+					'message' => $validator->errors(),
+				]);
+			}
+			$user_arr = [
+				'name' => $request->name,
+				'key' => $request->key,
+				'token' => $request->token,
+			];
+			// $input = $request->all();
+			$user_update = User::find($id)->update($user_arr);
+			$users = User::with('team')->get();
+			return response()->json(['status' => 'success', 'message' => 'Update Successfully!', 'users' => $users]);
+
+		} catch (\Exception $e) {
+			\Log::info($e);
+			return response()->json(['status' => 'error', 'message' => 'Update Failed!']);
+		}
 	}
 
 	/**

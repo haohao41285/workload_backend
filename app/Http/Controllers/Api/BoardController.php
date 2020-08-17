@@ -19,6 +19,7 @@ class BoardController extends Controller {
 	 * @return \Illuminate\Http\Response
 	 */
 	public function index() {
+		// return 'ok';
 		try {
 			$boards = BoardTrello::with('list')->get();
 			$lists = [];
@@ -36,7 +37,7 @@ class BoardController extends Controller {
 					->orWhere('status', 2);
 			})
 				->latest()->get();
-			$users = User::all();
+			$users = User::where('id_trello', '!=', '')->where('id_trello', '!=', null)->get();
 			return response()->json(['lists' => $lists, 'boards' => $boards, 'users' => $users, 'projects' => $projects]);
 		} catch (\Exception $e) {
 			\Log::info($e);
@@ -140,7 +141,8 @@ class BoardController extends Controller {
 				return response()->json(['status' => 'error', 'message' => 'Can Not Delete! This Board contain tasks']);
 			}
 			$board->delete();
-			return response()->json(['status' => 'success', 'message' => 'Delete Successfully!']);
+			$boards = BoardTrello::latest()->get();
+			return response()->json(['status' => 'success', 'message' => 'Delete Successfully!', 'boards' => $boards]);
 		} catch (\Exception $e) {
 			return response()->json(['status' => 'error', 'message' => 'Delete Failed!']);
 		}
@@ -216,5 +218,54 @@ class BoardController extends Controller {
 		$members = json_decode($body);
 
 		return $members;
+	}
+	public function show($id) {
+		try {
+			$board = BoardTrello::find($id);
+			$list_database = [];
+			foreach ($board->list as $list) {
+				$list_database[] = $list->idList;
+			}
+			$idBoard = $board->id_board;
+			//get trello board's list
+			$lists = $this->getListTrello($board->id_board);
+			$list_arr = [];
+
+			foreach ($lists as $key => $list) {
+				if (in_array($list->id, $list_database)) {} else {
+					$list_arr[] = [
+						'name' => $list->name,
+						'idList' => $list->id,
+						'id_board' => $board->id,
+					];
+				}
+			}
+			TableTrello::insert($list_arr);
+			$lists = TableTrello::where('id_board', $id)->latest()->get();
+			return response()->json(['list' => $lists, 'message' => count($list_arr) . " New List"]);
+		} catch (\Exception $e) {
+			\Log::info($e);
+			return response()->json(['status' => 'error', 'message' => 'Get List Failed!']);
+		}
+	}
+	public function users($id) {
+		try {
+			$members = $this->getMemberTrello($id);
+			$users = User::orderBy('name', 'desc')->get();
+			return response()->json(['members' => $members, 'users' => $users]);
+		} catch (\Exception $e) {
+			\Log::info($e);
+			return response()->json(['status' => 'error', 'message' => 'Get Users Failed!']);
+		}
+	}
+	public function updateIdTrelloToUser(Request $request) {
+		try {
+			$user = User::find($request->id_user);
+			$user->update(['id_trello' => $request->id_trello]);
+			return response()->json(['status' => 'success', 'message' => 'Update Successfully!']);
+		} catch (\Exception $e) {
+			\Log::info($e);
+			return response()->json(['status' => 'error', 'message' => 'Updated Failed!']);
+		}
 	}
 }

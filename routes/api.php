@@ -3,7 +3,10 @@
 Route::post('signup', 'AuthController@register');
 Route::post('login', 'AuthController@login');
 
-Route::group(['middleware' => 'jwt.auth'], function () {Route::get('auth', 'AuthController@user'); Route::post('logout', 'AuthController@logout');});
+Route::group(['middleware' => 'jwt.auth'], function () {
+	Route::get('auth', 'AuthController@user');
+	Route::post('logout', 'AuthController@logout');
+});
 
 Route::middleware('jwt.refresh')->get('/token/refresh', 'AuthController@refresh');
 
@@ -16,6 +19,11 @@ Route::post('task-calculate', 'TaskController@calculate');
 Route::post('extend', 'TaskController@extendTask');
 
 //Boards
+Route::group(['prefix' => 'board'], function () {
+	Route::get('/{id}/users', 'BoardController@users');
+	Route::get('/{id}/lists', 'BoardController@show');
+	Route::post('update-id-trello-to-user', 'BoardController@updateIdTrelloToUser');
+});
 Route::resource('board', 'BoardController')->only(['index', 'store', 'destroy']);
 Route::post('/board-update', 'BoardController@update');
 Route::post('/board-search', 'BoardController@search');
