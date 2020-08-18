@@ -32,6 +32,8 @@ Route::post('/board-search', 'BoardController@search');
 Route::group(['prefix' => 'user'], function () {
 	Route::post('{id}/change-password', 'UserController@changePassword')->where(['id' => '[0-9]']);
 	Route::post('{id}/update-status', 'UserController@updateStatus');
+	Route::get('{id}/get-one', 'UserController@getOne');
+	Route::post('{id}/update-one', 'UserController@updateOne');
 });
 Route::resource('user', 'UserController')->only(['update', 'destroy', 'index']);
 

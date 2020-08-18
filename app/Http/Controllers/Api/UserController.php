@@ -193,4 +193,55 @@ class UserController extends Controller {
 			return response()->json(['status' => 'error', 'message' => 'Update Failed!', 'users' => $users]);
 		}
 	}
+	public function getOne($id) {
+		try {
+			$user = User::find($id);
+			return response()->json($user);
+		} catch (\Exception $e) {
+			\Log::info($e);
+			return response()->json(['status' => 'error', 'message' => 'Get User Failed!']);
+		}
+	}
+	public function updateOne(Request $request, $id) {
+		try {
+			$user = User::find($id);
+			$input = $request->all();
+			$user->update($input);
+			return response()->json(['status' => 'success', 'message' => 'Update Successfully!']);
+		} catch (\Exception $e) {
+			\Log::info($e);
+			return response()->json(['status' => 'error', 'message' => 'Update Failed!']);
+		}
+	}
+	public function updatePassword(Request $request, $id) {
+		try {
+			$rules = [
+				'new_password' => 'required|
+				                min:9|
+				                regex:/[a-z]/|
+				                regex:/[A-Z]/|
+				                regex:/[0-9]/|
+				                regex:/[@$!%*#?&]/',
+			];
+			$messages = [
+				'new_password.required' => 'Password been required',
+				'new_password.min' => 'must be at least 9 characters in length',
+				'new_password.regex' => 'Must contain at least one lowercase letter, one uppercase, one digit, one special character',
+			];
+			$validator = \Validator::make($request->all(), $rules, $messages);
+			if ($validator->fails()) {
+				return response()->json([
+					'status' => 'error',
+					'message' => $validator->errors(),
+				]);
+			}
+			$user = User::find($id);
+
+			$user->update(['password' => $request->new_password]);
+			return response()->json(['status' => 'success', 'message' => 'Update Successfully!']);
+		} catch (\Exception $e) {
+			\Log::info($e);
+			return response()->json(['status' => 'error', 'message' => 'Update Failed!']);
+		}
+	}
 }

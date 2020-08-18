@@ -6,7 +6,7 @@ use GuzzleHttp\Client;
 class TestAiController extends Controller {
 
 	public function import() {
-		$access_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0NjEsInNpZ24iOiJlMTI0ZjdiYzc4OWU3YTk0OWEyNjljY2M2NjBmYzE4YiIsImlhdCI6MTU5NzcxNDQzMH0.8f_M4nJJK3Wc-7Y747bjPLJB43QIa0uBayGQIIwUEng';
+		$access_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0NjEsInNpZ24iOiI2MTFmZmJlNzY3N2YwZWI0YzkwYzU5ZDE1YTQ0OTFlZiIsImlhdCI6MTU5NzcyMTAzNX0.pcW5KkNvcSMioKTREpO-Yo5MDNAyq3u5iyI3GMwlPaU';
 		$contacts =
 			[
 			[
