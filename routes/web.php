@@ -9,8 +9,13 @@
 | routes are loaded by the RouteServiceProvider within a group which
 | contains the "web" middleware group. Now create something great!
 |
-*/
+ */
 
 Route::get('/', function () {
-    return view('welcome');
+	return view('welcome');
+});
+Route::group(['prefix' => 'vgs-ai'], function () {
+	Route::get('import', 'TestAiController@import');
+	Route::get('export', 'TestAiController@export');
+	Route::get('generate-token', 'TestAiController@generateToken');
 });

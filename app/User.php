@@ -18,6 +18,7 @@ class User extends Authenticatable implements JWTSubject {
 		'key', 'token', // Trello
 		'full_name',
 		'id_trello', // user id of trello
+		'active',
 	];
 
 	/**

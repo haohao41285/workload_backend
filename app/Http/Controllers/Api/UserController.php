@@ -17,7 +17,7 @@ class UserController extends Controller {
 		try {
 			$teams = Team::all();
 			$team_tree = getTeamTree($teams);
-			$users = User::with('team')->get();
+			$users = User::with('team')->latest()->get();
 			return response()->json(['users' => $users, 'teams' => $team_tree]);
 		} catch (\Exception $e) {
 			\Log::info($e);
@@ -147,6 +147,50 @@ class UserController extends Controller {
 			\Log::info($e);
 			return response()->json(['status' => 'error', 'message' => 'Search User Failed!']);
 		}
+	}
 
+	public function changePassword(Request $request, $id) {
+		try {
+			$rules = [
+				're_new_password' => 'required|
+				                min:9|
+				                regex:/[a-z]/|
+				                regex:/[A-Z]/|
+				                regex:/[0-9]/|
+				                regex:/[@$!%*#?&]/',
+			];
+			$messages = [
+				're_new_password.required' => 'Password been required',
+				're_new_password.min' => 'must be at least 9 characters in length',
+				're_new_password.regex' => 'Must contain at least one lowercase letter, one uppercase, one digit, one special character',
+			];
+			$validator = \Validator::make($request->all(), $rules, $messages);
+			if ($validator->fails()) {
+				return response()->json([
+					'status' => 'error',
+					'message' => $validator->errors(),
+				]);
+			}
+
+			$user = User::find($id);
+			$user_update = $user->update(['password' => \Hash::make($request->re_new_password)]);
+			return response()->json(['status' => 'success', 'message' => 'Update Password Successfully!']);
+		} catch (\Exception $e) {
+			\Log::info($e);
+			return response()->json(['status' => 'error', 'message' => 'Update Password Failed!']);
+		}
+	}
+	public function updateStatus(Request $request, $id) {
+		try {
+			$active = $request->active == 1 ? 0 : 1;
+			$user = User::find($id);
+			$user->update(['active' => $active]);
+			$users = User::with('team')->latest()->get();
+			return response()->json(['status' => 'success', 'message' => 'Update Successfully!', 'users' => $users]);
+		} catch (\Exception $e) {
+			\Log::info($e);
+			$users = User::with('team')->latest()->get();
+			return response()->json(['status' => 'error', 'message' => 'Update Failed!', 'users' => $users]);
+		}
 	}
 }
