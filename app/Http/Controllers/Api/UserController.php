@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Team;
 use App\User;
 use Illuminate\Http\Request;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class UserController extends Controller {
 	/**
@@ -214,19 +215,25 @@ class UserController extends Controller {
 		}
 	}
 	public function updatePassword(Request $request, $id) {
+		// return response()->json($request->all());
 		try {
 			$rules = [
+				'password' => 'required',
 				'new_password' => 'required|
-				                min:9|
-				                regex:/[a-z]/|
-				                regex:/[A-Z]/|
-				                regex:/[0-9]/|
-				                regex:/[@$!%*#?&]/',
+						                min:9|
+						                regex:/[a-z]/|
+						                regex:/[A-Z]/|
+						                regex:/[0-9]/|
+						                regex:/[@$!%*#?&]/',
+				're_new_password' => 'required| same:new_password',
 			];
 			$messages = [
+				'password.required' => 'Password been required',
 				'new_password.required' => 'Password been required',
-				'new_password.min' => 'must be at least 9 characters in length',
+				'new_password.min' => 'Must be at least 9 characters in length',
 				'new_password.regex' => 'Must contain at least one lowercase letter, one uppercase, one digit, one special character',
+				're_new_password.required' => 'Repeat password been required',
+				're_new_password.same' => 'New pass word not match',
 			];
 			$validator = \Validator::make($request->all(), $rules, $messages);
 			if ($validator->fails()) {
@@ -236,8 +243,15 @@ class UserController extends Controller {
 				]);
 			}
 			$user = User::find($id);
+			//Check Current User Password
+			if (!($token = JWTAuth::attempt(['email' => $user->email, 'password' => $request->password]))) {
+				return response()->json([
+					'status' => 'error',
+					'message' => 'Current Password Incorret!',
+				]);
+			}
 
-			$user->update(['password' => $request->new_password]);
+			$user->update(['password' => \Hash::make($request->new_password)]);
 			return response()->json(['status' => 'success', 'message' => 'Update Successfully!']);
 		} catch (\Exception $e) {
 			\Log::info($e);

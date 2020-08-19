@@ -34,6 +34,7 @@ Route::group(['prefix' => 'user'], function () {
 	Route::post('{id}/update-status', 'UserController@updateStatus');
 	Route::get('{id}/get-one', 'UserController@getOne');
 	Route::post('{id}/update-one', 'UserController@updateOne');
+	Route::post('{id}/update-password', 'UserController@updatePassword');
 });
 Route::resource('user', 'UserController')->only(['update', 'destroy', 'index']);
 
@@ -60,3 +61,13 @@ Route::group(['prefix' => 'project'], function () {
 	Route::post('/search', 'ProjectController@search');
 });
 Route::resource('project', 'ProjectController');
+
+Route::group(['prefix' => 'role'], function () {
+	Route::post('search', 'RoleController@search');
+});
+
+//Role
+Route::resource('role', 'RoleController')->only(['index', 'store', 'update']);
+
+//Permission
+Route::resource('permission', 'PermissionController');
