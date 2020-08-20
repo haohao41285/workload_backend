@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\RolePermission;
 use Illuminate\Http\Request;
 
 class PermissionController extends Controller {
@@ -25,45 +26,6 @@ class PermissionController extends Controller {
 	}
 
 	/**
-	 * Show the form for creating a new resource.
-	 *
-	 * @return \Illuminate\Http\Response
-	 */
-	public function create() {
-		//
-	}
-
-	/**
-	 * Store a newly created resource in storage.
-	 *
-	 * @param  \Illuminate\Http\Request  $request
-	 * @return \Illuminate\Http\Response
-	 */
-	public function store(Request $request) {
-		//
-	}
-
-	/**
-	 * Display the specified resource.
-	 *
-	 * @param  int  $id
-	 * @return \Illuminate\Http\Response
-	 */
-	public function show($id) {
-		//
-	}
-
-	/**
-	 * Show the form for editing the specified resource.
-	 *
-	 * @param  int  $id
-	 * @return \Illuminate\Http\Response
-	 */
-	public function edit($id) {
-		//
-	}
-
-	/**
 	 * Update the specified resource in storage.
 	 *
 	 * @param  \Illuminate\Http\Request  $request
@@ -71,16 +33,32 @@ class PermissionController extends Controller {
 	 * @return \Illuminate\Http\Response
 	 */
 	public function update(Request $request, $id) {
-		//
-	}
+		try {
+			$role_permission = RolePermission::where('id_role', $id)->first();
 
-	/**
-	 * Remove the specified resource from storage.
-	 *
-	 * @param  int  $id
-	 * @return \Illuminate\Http\Response
-	 */
-	public function destroy($id) {
-		//
+			if (!isset($role_permission->permissions)) {
+				$r_p_arr = [
+					'id_role' => $id,
+					'permissions' => $request->id_permission,
+					'active' => 1,
+				];
+				RolePermission::create($r_p_arr);
+			} else {
+				$permissions = $role_permission->permissions;
+				$permision_arr = explode(";", $permissions);
+				//Check permisson in array
+				if (($key = array_search($request->id_permission, $permision_arr)) !== false) {
+					unset($permision_arr[$key]);
+				} else {
+					$permision_arr[] = $request->id_permission;
+				}
+				$permissions = implode(';', $permision_arr);
+				$role_permission->update(['permissions' => $permissions]);
+			}
+			return response()->json(['status' => 'success', 'message' => 'Update Successfully!']);
+		} catch (\Exception $e) {
+			\Log::info($e);
+			return response()->json(['status' => 'error', 'message' => 'Update Failed!']);
+		}
 	}
 }

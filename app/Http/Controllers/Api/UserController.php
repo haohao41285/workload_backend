@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Project;
 use App\Models\Team;
 use App\User;
 use Illuminate\Http\Request;
@@ -19,7 +20,8 @@ class UserController extends Controller {
 			$teams = Team::all();
 			$team_tree = getTeamTree($teams);
 			$users = User::with('team')->latest()->get();
-			return response()->json(['users' => $users, 'teams' => $team_tree]);
+			$projects = Project::latest()->get();
+			return response()->json(['users' => $users, 'teams' => $team_tree, 'projects' => $projects]);
 		} catch (\Exception $e) {
 			\Log::info($e);
 			return response()->json(['status' => 'error', 'message' => 'Get users Failed!']);
@@ -89,6 +91,7 @@ class UserController extends Controller {
 				'name' => $request->name,
 				'key' => $request->key,
 				'token' => $request->token,
+				'id_role' => $request->id_role,
 			];
 			// $input = $request->all();
 			$user_update = User::find($id)->update($user_arr);

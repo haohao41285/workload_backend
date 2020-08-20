@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Project;
 use App\Models\TaskDetail;
 use App\User;
 use Illuminate\Http\Request;
@@ -36,6 +37,11 @@ class ReportController extends Controller {
 			if ($data['id_user'] == "all") {} elseif ($data['id_user'] != "all" && $data['id_user'] != "") {
 				$tasks = $tasks->where('user_id', $data['id_user']);
 			}
+			if ($data['id_project'] != "") {
+				$tasks = $tasks->whereHas('task', function ($query) use ($data) {
+					$query->where('id_project', $data['id_project']);
+				});
+			}
 
 			$tasks = $tasks->latest()->get();
 
@@ -49,7 +55,8 @@ class ReportController extends Controller {
 	public function getUser(Request $request) {
 		try {
 			$users = User::all();
-			return response()->json($users);
+			$projects = Project::latest()->get();
+			return response()->json(['users' => $users, 'projects' => $projects]);
 		} catch (\Exception $e) {
 			\Log::info($e);
 			return response()->json(['status' => 'error', 'message' => 'Get Users Failed!']);

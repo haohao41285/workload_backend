@@ -70,4 +70,4 @@ Route::group(['prefix' => 'role'], function () {
 Route::resource('role', 'RoleController')->only(['index', 'store', 'update']);
 
 //Permission
-Route::resource('permission', 'PermissionController');
+Route::resource('permission', 'PermissionController')->only(['update', 'index']);

@@ -42,4 +42,23 @@ function statusTask() {
 		4 => 'REOPEN',
 	];
 }
+
+function menuTree($menus, $id_parent = 0) {
+	$menu_arr = [];
+	foreach ($menus as $key => $menu) {
+		if ($menu['id_parent'] == $id_parent) {
+			$menu_arr[$key] = [
+				'url' => $menu['url'],
+				'icon' => $menu['icon'],
+				'name' => $menu['name'],
+			];
+			unset($menus[$key]);
+			$team_child = menuTree($menus, $menu['id']);
+			if (count($team_child) > 0) {
+				$menu_arr[$key]['children'] = $team_child;
+			}
+		}
+	}
+	return $menu_arr;
+}
 ?>

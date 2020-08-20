@@ -53,6 +53,14 @@ class PermissionSeeder extends Seeder {
 				'slug' => 'team-admin',
 			],
 			[
+				'name' => 'Profile',
+				'slug' => 'profiles',
+			],
+			[
+				'name' => 'Project',
+				'slug' => 'projects',
+			],
+			[
 				'name' => 'Reports',
 				'slug' => 'reports',
 			],

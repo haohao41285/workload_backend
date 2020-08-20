@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RegisterFormRequest;
+use App\Models\Permission;
+use App\Models\RolePermission;
 use App\User;
 use DB;
 use Illuminate\Http\Request;
@@ -35,11 +37,32 @@ class AuthController extends Controller {
 			}
 
 			$data = User::where("email", $request->email)->with('team')->first();
+			if ($data->active != 1) {
+				return response()->json(['status' => 'error', 'message' => 'Can not login now']);
+			}
 			//Insert or update _token_api
 			User::where('email', $request->email)->update(['_token_api' => $token]);
+
+			//Get permissions
+			$per_arr = [];
+			if ($data->id_role != "" && $data->id_role != null) {
+				$permissions = RolePermission::where('id_role', $data->id_role)->first();
+				if ($permissions->permissions != "" && $permissions->permissions != null) {
+					$permission_arr = explode(";", $permissions->permissions);
+					$permissions = Permission::whereIn('id', $permission_arr)->select('id', 'name', 'slug')->get()->toArray();
+					foreach ($permissions as $key => $p) {
+						$per_arr[] = "/" . $p['slug'];
+					}
+				} else {
+					$permissions = [];
+				}
+			} else {
+				$permissions = [];
+			}
+
 			DB::commit();
 
-			return response()->json(['token' => $token, 'data' => $data], Response::HTTP_OK);
+			return response()->json(['token' => $token, 'data' => $data, 'permissions' => $permissions, 'per_arr' => $per_arr], Response::HTTP_OK);
 		} catch (\Exception $e) {
 			\Log::info($e);
 			DB::rollBack();

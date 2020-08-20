@@ -222,6 +222,11 @@ class TaskController extends Controller {
 					$query->whereBetween('date_start', [$data['from'], $data['to']]);
 				});
 			}
+			if ($data['id_project'] != "") {
+				$tasks = $tasks->whereHas('task', function ($query) use ($data) {
+					$query->where('id_project', $data['id_project']);
+				});
+			}
 
 			$tasks = $tasks->latest()->get();
 
