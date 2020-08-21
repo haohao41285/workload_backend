@@ -13,7 +13,7 @@
 
 Route::get('/', function () {
 	return view('welcome');
-});
+})->name('welcome');
 Route::group(['prefix' => 'vgs-ai'], function () {
 	Route::get('import', 'TestAiController@import');
 	Route::get('export', 'TestAiController@export');

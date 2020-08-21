@@ -11,12 +11,15 @@ Route::group(['middleware' => 'jwt.auth'], function () {
 Route::middleware('jwt.refresh')->get('/token/refresh', 'AuthController@refresh');
 
 //Tasks
-Route::resource('task', 'TaskController');
 Route::post('task-search', 'TaskController@search');
 Route::post('task-total', 'TaskController@searchTotal');
 Route::get('detail_task/{id_board}', 'TaskController@detail_task');
 Route::post('task-calculate', 'TaskController@calculate');
 Route::post('extend', 'TaskController@extendTask');
+Route::group(['prefix' => 'task'], function () {
+	Route::get('by-token/{token}', 'TaskController@byToken');
+});
+Route::resource('task', 'TaskController');
 
 //Boards
 Route::group(['prefix' => 'board'], function () {
@@ -36,7 +39,7 @@ Route::group(['prefix' => 'user'], function () {
 	Route::post('{id}/update-one', 'UserController@updateOne');
 	Route::post('{id}/update-password', 'UserController@updatePassword');
 });
-Route::resource('user', 'UserController')->only(['update', 'destroy', 'index']);
+Route::resource('user', 'UserController')->only(['show', 'update', 'destroy', 'index']);
 
 Route::post('user-search', 'UserController@search');
 //Teams

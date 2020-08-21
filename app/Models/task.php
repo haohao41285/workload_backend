@@ -14,6 +14,7 @@ class task extends Model {
 		'created_by',
 		'id_project',
 		'date_finish',
+		'follower',
 
 	];
 

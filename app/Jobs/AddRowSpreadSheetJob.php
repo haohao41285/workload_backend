@@ -8,18 +8,18 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
-class AddTrelloJob implements ShouldQueue {
-	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+class AddRowSpreadSheetJob implements ShouldQueue {
+	protected $job_arr;
 
-	protected $input;
+	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
 	/**
 	 * Create a new job instance.
 	 *
 	 * @return void
 	 */
-	public function __construct($input) {
-		$this->input = $input;
+	public function __construct($job_arr) {
+		$this->job_arr = $job_arr;
 	}
 
 	/**
@@ -28,6 +28,12 @@ class AddTrelloJob implements ShouldQueue {
 	 * @return void
 	 */
 	public function handle() {
-		//
+		\Log::info('ok');
+		try {
+			appendRow($this->job_arr);
+		} catch (\Exception $e) {
+			\Log::info($e);
+		}
+
 	}
 }

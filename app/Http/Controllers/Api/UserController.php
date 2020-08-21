@@ -55,7 +55,8 @@ class UserController extends Controller {
 	 * @return \Illuminate\Http\Response
 	 */
 	public function show($id) {
-		//
+		// $user = User::find($id);
+		// return response()->json($user);
 	}
 
 	/**

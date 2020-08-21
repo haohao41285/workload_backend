@@ -202,4 +202,8 @@ class TeamController extends Controller {
 			return response()->json(['status' => 'error', 'message' => 'Remove User Failed!']);
 		}
 	}
+	public function getLeader($id) {
+		$team = User::find($id);
+		return response()->json($team);
+	}
 }

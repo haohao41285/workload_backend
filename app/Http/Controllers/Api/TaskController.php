@@ -3,11 +3,15 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\AddRowSpreadSheetJob;
+use App\Jobs\MailRequestExtendTaskJob;
 use App\Models\ExtendTask;
+use App\Models\Project;
 use App\Models\TableTrello;
 use App\Models\task;
 use App\Models\TaskDetail;
 use App\User;
+use Carbon\Carbon;
 use DB;
 use Illuminate\Http\Request;
 
@@ -44,6 +48,10 @@ class TaskController extends Controller {
 			$input['id_board'] = $request->idBoard;
 			$input['des'] = $request->desc;
 			$input['created_by'] = $input['user_id'];
+			//get follower task
+			$follower = User::where('id_trello', $input['follower'])->first()->id;
+			$input['follower'] = $follower;
+
 			$task = task::create($input);
 
 			//get id user assign
@@ -62,13 +70,18 @@ class TaskController extends Controller {
 				$user_name_arr[] = $user->name;
 			}
 			$user_name_str = implode('|', $user_name_arr);
+
+			$project = Project::find($input['id_project'])->name;
 			$values = [
 				[
-					"", '', $input['name'], $user_name_str, 'NEW', '', $input['due'], '', '', '', $input['id_trello'],
+					$input['team'], $project, $input['name'], $user_name_str, 'NEW', '', $input['due'], '', '', '', $input['id_trello'],
 				],
 			];
 			// Add data to google sheet
-			appendRow($values);
+			// appendRow($values);
+			$addSpreadSheetJob = (new AddRowSpreadSheetJob($values))->delay(Carbon::now()->addSeconds(10));
+			dispatch($addSpreadSheetJob);
+
 			// return $input;
 			TaskDetail::insert($detail_arr);
 			DB::commit();
@@ -324,16 +337,62 @@ class TaskController extends Controller {
 		DB::beginTransaction();
 		try {
 			$input = $request->all();
-			$input['expired'] = $input['old_deadline'];
-			$extend = ExtendTask::create($input);
-			$extend->task->update(['due' => $input['expired_date']]);
-			$tasks = TaskDetail::where('user_id', $input['user_id'])->with('task')->get();
-			DB::commit();
-			return response()->json(['status' => 'success', 'message' => 'Extend Task Successfully!', 'tasks' => $tasks]);
+			$task = task::find($input['id_task']);
+
+			if ($input['user_id'] == $task->follower) {
+				$input['expired'] = $input['old_deadline'];
+				$input['status'] = 1;
+				$extend = ExtendTask::create($input);
+				$extend->task->update(['due' => $input['expired_date']]);
+
+				$tasks = TaskDetail::where('user_id', $input['user_id'])->with('task')->get();
+
+				DB::commit();
+				return response()->json(['status' => 'success', 'message' => 'Extend Task Successfully!', 'mail' => '0', 'tasks' => $tasks]);
+			} else {
+				$input['expired'] = $input['expired_date'];
+				$extend = ExtendTask::create($input);
+				$follower_id = $extend->task->follower;
+				$follower = User::find($follower_id);
+				$job_arr = [
+					'reciever_email' => $follower->email,
+					'name' => $follower->name,
+					'subject' => '[INTERNAL]-Yêu cầu gia hạn Task' . $extend->task->name,
+					'view' => 'mail.request_extend',
+					'link' => ENV('REAL_DOMAIL') . "task-request",
+				];
+				// \Mail::send($job_arr['view'], $job_arr, function ($m) use ($job_arr) {
+				// 	$m->from(env('MAIL_USERNAME'));
+				// 	$m->to($job_arr['reciever_email'], $job_arr['name'])->subject($job_arr['subject']);
+				// });
+				$addSpreadSheetJob = (new MailRequestExtendTaskJob($job_arr))->delay(Carbon::now()->addSeconds(10));
+				dispatch($addSpreadSheetJob);
+
+				DB::commit();
+				return response()->json(['status' => 'success', 'message' => "Send Request Successfully", 'tasks' => $tasks, 'mail' => 1]);
+			}
+
 		} catch (\Exception $e) {
 			DB::rollBack();
 			\Log::info($e);
 			return response()->json(['status' => 'error', 'message' => 'Extend Task Failed!']);
+		}
+	}
+	public function byToken($token) {
+		try {
+			$extend_task = ExtendTask::with(['task', 'detail_task'])->where('token', $token)->first();
+			if (!isset($extend_task)) {
+				return response()->json(['status' => 'error', 'message' => 'Can not find task']);
+			}
+			if ($extend_task->status == 1) {
+				return response()->json(['status' => 'error', 'message' => 'This task has been ACCEPTED']);
+			} elseif ($extend_task->status == 2) {
+				return response()->json(['status' => 'error', 'message' => 'This Task has been CANCEL']);
+			}
+			return response()->json($extend_task);
+		} catch (\Exception $e) {
+			\Log::info($e);
+			return response()->json(['status' => 'error', 'message' => 'Get Task Failed!']);
 		}
 	}
 }

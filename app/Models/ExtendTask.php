@@ -11,6 +11,8 @@ class ExtendTask extends Model {
 		'id_task', // from tasks
 		'id_detail_task', // from task_detail
 		'note',
+		'status', // 0: New, 1: Active, 2: Cancel
+		'token',
 	];
 
 	public function task() {
