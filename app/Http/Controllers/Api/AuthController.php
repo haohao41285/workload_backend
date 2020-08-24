@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\RegisterFormRequest;
 use App\Models\Permission;
 use App\Models\RolePermission;
 use App\User;
@@ -12,17 +11,46 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Validator;
 
 class AuthController extends Controller {
-	public function register(RegisterFormRequest $request) {
-		$params = $request->only('email', 'name', 'password');
-		$user = new User();
-		$user->email = $params['email'];
-		$user->name = $params['name'];
-		$user->password = bcrypt($params['password']);
-		$user->save();
+	public function register(Request $request) {
+		try {
+			$rules = [
+				'password' => 'required|
+				                min:9|
+				                regex:/[a-z]/|
+				                regex:/[A-Z]/|
+				                regex:/[0-9]/|
+				                regex:/[@$!%*#?&]/',
+				'email' => 'required|unique:users,email',
+				'full_name' => 'required',
+				'name' => 'required|unique:users,name',
+			];
+			$messages = [
+				'password.required' => 'Password been required',
+				'password.min' => 'must be at least 9 characters in length',
+				'password.regex' => 'Must contain at least one lowercase letter, one uppercase, one digit, one special character',
+			];
+			$validator = \Validator::make($request->all(), $rules, $messages);
+			if ($validator->fails()) {
+				return response()->json([
+					'status' => 'error',
+					'message' => $validator->errors(),
+				]);
+			}
 
-		return response()->json($user, Response::HTTP_OK);
+			$input = $request->all();
+			$input['password'] = Hash::make($input['password']);
+			User::create($input);
+
+			return response()->json(['status' => 'error', 'message' => 'Create Account successfully!']);
+
+		} catch (\Exception $e) {
+			\Log::info($e);
+			return response()->json(['status' => 'error', 'message' => 'Register Failed!']);
+		}
+
 	}
 
 	public function login(Request $request) {

@@ -18,13 +18,14 @@ Route::post('task-calculate', 'TaskController@calculate');
 Route::post('extend', 'TaskController@extendTask');
 Route::group(['prefix' => 'task'], function () {
 	Route::get('by-token/{token}', 'TaskController@byToken');
+	Route::post('response-extend', 'TaskController@responseExtend');
 });
 Route::resource('task', 'TaskController');
 
 //Boards
 Route::group(['prefix' => 'board'], function () {
-	Route::get('/{id}/users', 'BoardController@users');
-	Route::get('/{id}/lists', 'BoardController@show');
+	Route::post('/users', 'BoardController@users');
+	Route::post('/lists', 'BoardController@show');
 	Route::post('update-id-trello-to-user', 'BoardController@updateIdTrelloToUser');
 });
 Route::resource('board', 'BoardController')->only(['index', 'store', 'destroy']);
@@ -52,7 +53,7 @@ Route::group(['prefix' => 'team'], function () {
 Route::resource('team', 'TeamController');
 
 //Task Logs
-Route::resource('log', 'LogTaskController')->only(['store', 'index']);
+Route::resource('log', 'LogTaskController')->only(['store', 'index', 'show']);
 //Report
 Route::group(['prefix' => 'report'], function () {
 	Route::post('/search', 'ReportController@search');

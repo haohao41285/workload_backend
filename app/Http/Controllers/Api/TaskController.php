@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Jobs\AddRowSpreadSheetJob;
 use App\Jobs\MailRequestExtendTaskJob;
+use App\Jobs\ResponseExtendTaskJob;
+use App\Jobs\UpdateTrelloJob;
 use App\Models\ExtendTask;
 use App\Models\Project;
 use App\Models\TableTrello;
@@ -164,7 +166,7 @@ class TaskController extends Controller {
 				}
 			}
 			//Update google sheet
-			$task_info = task::find($input['id']);
+			$task_info = task::find($input['main_id']);
 			$user_arr = [];
 			foreach ($task_info->tasks_details as $detail) {
 				$user_arr[] = " " . $detail->user->name . " ";
@@ -186,6 +188,20 @@ class TaskController extends Controller {
 
 			$range = "C" . $position . ":" . "I" . $position;
 			updateRow($values, $position, $range);
+
+			//Update trello
+			$idList = $task_detail->task->idList;
+			$job_arr = [
+				'key' => $input['key'],
+				'token' => $input['token'],
+				'url' => ENV('TRELLO_URL') . "cards/" . $task_detail->task->id_trello,
+				'name' => $input['name'],
+				'desc' => $input['desc'],
+				'dueComplete' => $input['status'] == 3 ? true : false,
+				'idList' => $task_detail->task->idList,
+			];
+			$update_trello = (new UpdateTrelloJob($job_arr))->delay(Carbon::now()->addSeconds(10));
+			dispatch($update_trello);
 
 			$tasks = TaskDetail::where('user_id', $input['user_id'])->with('task')->latest()->get();
 			DB::commit();
@@ -351,6 +367,7 @@ class TaskController extends Controller {
 				return response()->json(['status' => 'success', 'message' => 'Extend Task Successfully!', 'mail' => '0', 'tasks' => $tasks]);
 			} else {
 				$input['expired'] = $input['expired_date'];
+				$input['token'] = Hash::make('Vietguys' . $input['expired']);
 				$extend = ExtendTask::create($input);
 				$follower_id = $extend->task->follower;
 				$follower = User::find($follower_id);
@@ -359,7 +376,7 @@ class TaskController extends Controller {
 					'name' => $follower->name,
 					'subject' => '[INTERNAL]-Yêu cầu gia hạn Task' . $extend->task->name,
 					'view' => 'mail.request_extend',
-					'link' => ENV('REAL_DOMAIL') . "task-request",
+					'link' => ENV('REAL_DOMAIL') . "task-request?token=" . $input['token'],
 				];
 				// \Mail::send($job_arr['view'], $job_arr, function ($m) use ($job_arr) {
 				// 	$m->from(env('MAIL_USERNAME'));
@@ -380,19 +397,85 @@ class TaskController extends Controller {
 	}
 	public function byToken($token) {
 		try {
-			$extend_task = ExtendTask::with(['task', 'detail_task'])->where('token', $token)->first();
-			if (!isset($extend_task)) {
-				return response()->json(['status' => 'error', 'message' => 'Can not find task']);
-			}
+			$extend_task = TaskDetail::join('extend_tasks', function ($join) {
+				$join->on('task_details.id', 'extend_tasks.id_detail_task');
+			})
+				->join('tasks', function ($join) {
+					$join->on('task_details.id_task', 'tasks.id');
+				})
+				->join('users', function ($join) {
+					$join->on('task_details.user_id', 'users.id');
+				})
+				->where('extend_tasks.token', $token)
+				->select('task_details.progressing', 'task_details.id as detail_id', 'users.name', 'users.email', 'users.full_name', 'tasks.date_start', 'tasks.id as task_id', 'due', 'tasks.idList', 'tasks.id_trello', 'tasks.progressing as main_progressing', 'tasks.name as task_name', 'extend_tasks.expired', 'extend_tasks.note', 'extend_tasks.status', 'extend_tasks.id as extend_task_id')
+				->first();
+
 			if ($extend_task->status == 1) {
-				return response()->json(['status' => 'error', 'message' => 'This task has been ACCEPTED']);
+				return response()->json(['status' => 'error', 'message' => 'This request has been ACCEPTED']);
 			} elseif ($extend_task->status == 2) {
-				return response()->json(['status' => 'error', 'message' => 'This Task has been CANCEL']);
+				return response()->json(['status' => 'error', 'message' => 'This request has been CANCEL']);
 			}
 			return response()->json($extend_task);
 		} catch (\Exception $e) {
 			\Log::info($e);
-			return response()->json(['status' => 'error', 'message' => 'Get Task Failed!']);
+			return response()->json(['status' => 'error', 'message' => 'Get Extend Task Failed!']);
+		}
+	}
+	public function responseExtend(Request $request) {
+		DB::beginTransaction();
+		try {
+			$input = $request->all();
+
+			$tasks = task::find($input['id_task']);
+			$detail_task = TaskDetail::with('user')->find($input['id_detail']);
+			$extend_task = ExtendTask::find($input['id_extend']);
+
+			$old_expired = $tasks->due;
+			$requested_expired = $extend_task->expired;
+
+			if ($input['status'] == '1') {
+
+				if ($input['expired'] == "") {
+					$new_expired = $extend_task->expired;
+				} else {
+					$new_expired = $input['expired_time'];
+				}
+
+				//Update expired request
+				$status = 'Chấp nhận';
+				$tasks->update(['due' => $new_expired]);
+				$extend_task->update(['expired' => $old_expired, 'status' => 1]);
+
+			} else {
+				// Cancel Extend Task
+				$status = "Không được chấp nhận";
+				$new_expired = "";
+				ExtendTask::find($input['id_extend'])->update(['status' => 2]);
+			}
+
+			//Send Mail to response
+			$job_arr = [
+				'reciever_email' => $detail_task->user->email,
+				'name' => $detail_task->user->name,
+				'subject' => '[INTERNAL]-Yêu cầu gia hạn Task' . $tasks->name,
+				'view' => 'mail.response_extend_task',
+				'task_name' => $tasks->name,
+				'old_expired' => $old_expired,
+				'requested_expired' => $requested_expired,
+				'response_expired' => $new_expired,
+				'status' => $status,
+				'note' => $input['message'],
+			];
+
+			$response_extend_task = (new ResponseExtendTaskJob($job_arr))->delay(Carbon::now()->addSeconds(10));
+			dispatch($response_extend_task);
+			DB::commit();
+
+			return response()->json(['status' => 'success', 'message' => 'Response Extend Task Successfully!']);
+		} catch (\Exception $e) {
+			\Log::info($e);
+			DB::rollBack();
+			return response()->json(['status' => 'error', 'message' => 'Response Extend Task Failed!']);
 		}
 	}
 }

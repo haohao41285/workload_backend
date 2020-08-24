@@ -14,7 +14,7 @@ class ReportController extends Controller {
 		try {
 			$data = $request->all();
 
-			$tasks = TaskDetail::with(['task', 'logs', 'extend']);
+			$tasks = TaskDetail::with(['task', 'logs', 'extend', 'user']);
 
 			if ($data['status'] == 'all') {} else {
 				if ($data['status'] == '3') {

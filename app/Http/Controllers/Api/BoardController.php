@@ -9,7 +9,6 @@ use App\Models\TableTrello;
 use App\User;
 use DB;
 use GuzzleHttp\Client;
-use Hash;
 use Illuminate\Http\Request;
 
 class BoardController extends Controller {
@@ -60,6 +59,8 @@ class BoardController extends Controller {
 			if ($check > 0) {
 				return response()->json(['status' => 'warning', 'message' => 'This Url has Existed!']);
 			}
+			$key = $request->key;
+			$token = $request->token;
 			//Find idBoard Trello
 			$url = $request->url;
 			$str_rev = strrev($url);
@@ -67,7 +68,7 @@ class BoardController extends Controller {
 			$new_string = strrev(substr($str_rev, $pos)) . "reports.json";
 
 			$client = new Client;
-			$response = $client->request('GET', $new_string . "?key=" . "054d67263f0716f7d49178686fc67888&token=" . "1a14e59b944dafc50f9ac3e1b6d78090ce3443c258df51272708e85799538b5a");
+			$response = $client->request('GET', $new_string . "?key=" . $key . "&token=" . $token);
 			$body = (string) $response->getBody();
 			$board_info = json_decode($body);
 
@@ -80,32 +81,32 @@ class BoardController extends Controller {
 			$board = BoardTrello::create($board_arr);
 
 			//Get Member of Board
-			$members = $this->getMemberTrello($board_info->id);
-			//Get users database
-			$old_users = User::all();
-			$old_user_arr = [];
-			foreach ($old_users as $user) {
-				$old_user_arr[] = $user->id_trello;
-			}
-			$member_arr = [];
-			//Compare to get new members
-			foreach ($members as $key => $member) {
-				if (in_array($member->id, $old_user_arr)) {} else {
-					$member_arr[] = [
-						'name' => $member->username,
-						'id_trello' => $member->id,
-						'full_name' => $member->fullName,
-						'email' => $member->username . '@vietguys.biz',
-						'password' => Hash::make(123456),
-					];
-				}
+			// $members = $this->getMemberTrello($board_info->id, $key, $token);
+			// //Get users database
+			// $old_users = User::all();
+			// $old_user_arr = [];
+			// foreach ($old_users as $user) {
+			// 	$old_user_arr[] = $user->id_trello;
+			// }
+			// $member_arr = [];
+			// //Compare to get new members
+			// foreach ($members as $key => $member) {
+			// 	if (in_array($member->id, $old_user_arr)) {} else {
+			// 		$member_arr[] = [
+			// 			'name' => $member->username,
+			// 			'id_trello' => $member->id,
+			// 			'full_name' => $member->fullName,
+			// 			'email' => $member->username . '@vietguys.biz',
+			// 			'password' => Hash::make(123456),
+			// 		];
+			// 	}
 
-			}
-			User::insert($member_arr);
+			// }
+			// User::insert($member_arr);
 			//End get member trello
 
 			//Get List of Board
-			$lists = $this->getListTrello($board_info->id);
+			$lists = $this->getListTrello($board_info->id, $key, $token);
 			$list_arr = [];
 			foreach ($lists as $key => $list) {
 				$list_arr[] = [
@@ -122,8 +123,8 @@ class BoardController extends Controller {
 			// return $pos;
 			return response()->json(['status' => 'Success', 'board' => $board, 'lists' => $list_arr, 'boards' => $boards]);
 		} catch (\Exception $e) {
-			DB::rollBack();
 			\Log::info($e);
+			DB::rollBack();
 			return response()->json(['status' => 'error', 'message' => 'Add Board Falied!']);
 		}
 	}
@@ -200,35 +201,35 @@ class BoardController extends Controller {
 			return response()->json(['status' => "error", 'message' => 'Failed!']);
 		}
 	}
-	public static function getListTrello($idBoard) {
+	public static function getListTrello($idBoard, $key, $token) {
 		$url_trello = 'https://api.trello.com/1/boards/' . $idBoard . "/lists";
 		$client_list = new Client;
-		$response_list = $client_list->request('GET', $url_trello . "?key=" . "054d67263f0716f7d49178686fc67888&token=" . "1a14e59b944dafc50f9ac3e1b6d78090ce3443c258df51272708e85799538b5a");
+		$response_list = $client_list->request('GET', $url_trello . "?key=" . $key . "&token=" . $token);
 		$body_list = (string) $response_list->getBody();
 
 		$lists = json_decode($body_list);
 		return $lists;
 	}
-	public static function getMemberTrello($idBoard) {
+	public static function getMemberTrello($idBoard, $key, $token) {
 		$url = 'https://api.trello.com/1/boards/' . $idBoard . '/members';
 		$client = new Client;
-		$response = $client->request('GET', $url . "?key=" . "054d67263f0716f7d49178686fc67888&token=" . "1a14e59b944dafc50f9ac3e1b6d78090ce3443c258df51272708e85799538b5a");
+		$response = $client->request('GET', $url . "?key=" . $key . "&token=" . $token);
 		$body = (string) $response->getBody();
 
 		$members = json_decode($body);
 
 		return $members;
 	}
-	public function show($id) {
+	public function show(Request $r) {
 		try {
-			$board = BoardTrello::find($id);
+			$board = BoardTrello::find($r->id);
 			$list_database = [];
 			foreach ($board->list as $list) {
 				$list_database[] = $list->idList;
 			}
 			$idBoard = $board->id_board;
 			//get trello board's list
-			$lists = $this->getListTrello($board->id_board);
+			$lists = $this->getListTrello($board->id_board, $r->key, $r->token);
 			$list_arr = [];
 
 			foreach ($lists as $key => $list) {
@@ -241,16 +242,16 @@ class BoardController extends Controller {
 				}
 			}
 			TableTrello::insert($list_arr);
-			$lists = TableTrello::where('id_board', $id)->latest()->get();
+			$lists = TableTrello::where('id_board', $r->id)->latest()->get();
 			return response()->json(['list' => $lists, 'message' => count($list_arr) . " New List"]);
 		} catch (\Exception $e) {
 			\Log::info($e);
 			return response()->json(['status' => 'error', 'message' => 'Get List Failed!']);
 		}
 	}
-	public function users($id) {
+	public function users(Request $r) {
 		try {
-			$members = $this->getMemberTrello($id);
+			$members = $this->getMemberTrello($r->id, $r->key, $r->token);
 			$users = User::orderBy('name', 'desc')->get();
 			return response()->json(['members' => $members, 'users' => $users]);
 		} catch (\Exception $e) {

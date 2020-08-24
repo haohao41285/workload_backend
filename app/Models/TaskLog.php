@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Models;
-
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
 class TaskLog extends Model {
@@ -17,5 +17,10 @@ class TaskLog extends Model {
 
 	public function task() {
 		return $this->belongsTo(task::class, 'id_task', 'id');
+	}
+
+	public function getDateWorkAttribute($date) {
+		// return $this->attributes['date_work']->format('Y-m-d');
+		return Carbon::parse($date)->format('Y-m-d');
 	}
 }
