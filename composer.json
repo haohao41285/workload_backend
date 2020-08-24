@@ -44,8 +44,8 @@
             "database/factories"
         ],
         "files" : [
-            "App/Helpers/Functions.php",
-            "App/Helpers/GoogleSpreadSheet.php"
+            "app/Helpers/Functions.php",
+            "app/Helpers/GoogleSpreadSheet.php"
         ]
     },
     "autoload-dev": {
