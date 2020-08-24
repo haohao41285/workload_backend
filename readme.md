@@ -7,7 +7,7 @@ Upload date :
 
 ## Domain requirements
 
-<!-- demo2.vietguys.biz -->
+todo.vietguys.biz
 
 ## Hardware requirements
 
