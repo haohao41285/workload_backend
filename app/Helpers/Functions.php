@@ -61,4 +61,47 @@ function menuTree($menus, $id_parent = 0) {
 	}
 	return $menu_arr;
 }
+
+//Get Child Team Tree
+function getChildTeamTree($teams, $id_parent, $str = "") {
+	$team_arr = [];
+
+	foreach ($teams as $key => $team) {
+		if ($team['id_parent'] == $id_parent) {
+			$team_arr[] = [
+				'text' => $str,
+				'id' => $team['id'],
+				'name' => $team['name'],
+			];
+			$team_child = getIdChildTeam($teams, $team['id'], $str . "|______");
+
+			if (count($team_child) > 0) {
+				$team_arr = array_merge($team_arr, $team_child);
+			}
+		}
+		// unset($teams[$key]);
+
+	}
+	return $team_arr;
+}
+
+//check permission
+function checkPermission($permission, $token) {
+	try {
+		$permission_id = \App\Models\Permission::where('slug', $permission)->first()->id;
+		$user = \App\User::where('_token_api', $token)->first();
+		$permission_list = \App\Models\RolePermission::where('id_role', $user->id_role)->first()->permissions;
+		$permission_list = explode(';', $permission_list);
+
+		if (in_array(intval($permission_id), $permission_list)) {
+			return true;
+		} else {
+			return false;
+		}
+	} catch (\Exception $e) {
+		\Log::info($e);
+		return false;
+	}
+
+}
 ?>

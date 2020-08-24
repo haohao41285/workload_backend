@@ -15,13 +15,27 @@ class UserController extends Controller {
 	 *
 	 * @return \Illuminate\Http\Response
 	 */
-	public function index() {
+	public function index(Request $request) {
 		try {
-			$teams = Team::all();
-			$team_tree = getTeamTree($teams);
-			$users = User::with('team')->latest()->get();
-			$projects = Project::latest()->get();
-			return response()->json(['users' => $users, 'teams' => $team_tree, 'projects' => $projects]);
+			if (checkPermission('user-admin', $request->header('Authorization')) == true) {
+				$teams = Team::all();
+				$team_tree = getTeamTree($teams);
+				$users = User::with('team')->latest()->get();
+				$projects = Project::latest()->get();
+				return response()->json(['users' => $users, 'teams' => $team_tree, 'projects' => $projects]);
+
+			} elseif (checkPermission('user-leader', $request->header('Authorization')) == true) {
+				$teams = Team::all();
+				$id_team = User::where('_token_api', $request->header('Authorization'))->first()->team_id;
+				$team_tree = getChildTeamTree($teams, $id_team);
+				$team_arr = getIdChildTeam($teams, $id_team);
+				$projects = Project::latest()->get();
+				$users = User::whereIn('team_id', $team_arr)->with('team')->latest()->get();
+				return response()->json(['users' => $users, 'teams' => $team_tree, 'projects' => $projects]);
+			} else {
+				return response()->json(['status' => 'warning', 'message' => 'Access Denied!']);
+			}
+
 		} catch (\Exception $e) {
 			\Log::info($e);
 			return response()->json(['status' => 'error', 'message' => 'Get users Failed!']);
@@ -138,7 +152,17 @@ class UserController extends Controller {
 				$name = "%" . str_replace(" ", '%', $input['name']) . "%";
 				$users = $users->where('name', 'like', $name);
 			}
-			if ($input['team_id'] == "all") {} else {
+			if ($input['team_id'] == "all") {
+
+				if (checkPermission('user-admin', $request->header('Authorization')) == true) {
+
+				} elseif (checkPermission('user-leader', $request->header('Authorization')) == true) {
+					$teams = Team::all();
+					$id_team = User::where('_token_api', $request->header('Authorization'))->first()->team_id;
+					$team_arr = getIdChildTeam($teams, $id_team);
+					$users = $users->whereIn('team_id', $team_arr);
+				}
+			} else {
 				//get all team child
 				$teams = Team::all();
 				$team_child = getIdChildTeam($teams, $input['team_id']);

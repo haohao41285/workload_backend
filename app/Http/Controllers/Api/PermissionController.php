@@ -17,7 +17,7 @@ class PermissionController extends Controller {
 	public function index() {
 		try {
 			$permissions = Permission::all();
-			$roles = Role::with('permissions')->get();
+			$roles = Role::with('permissions')->where('id', '!=', 1)->get();
 			return response()->json(['roles' => $roles, 'permissions' => $permissions]);
 		} catch (\Exception $e) {
 			\Log::info($e);
