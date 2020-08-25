@@ -18,11 +18,11 @@ class ReportController extends Controller {
 			$tasks = TaskDetail::with(['task', 'logs', 'extend', 'user']);
 
 			if ($data['status'] == 'all') {} else {
-				if ($data['status'] == '3') {
-					$tasks = $tasks->whereDate('due', '>', today());
-				} else {
-					$tasks = $tasks->where('status', $data['status']);
-				}
+				// if ($data['status'] == '3') {
+				// 	$tasks = $tasks->whereDate('due', '>', today());
+				// } else {
+				$tasks = $tasks->where('status', $data['status']);
+				// }
 			}
 			if ($data['name'] != "") {
 				$name = "%" . str_replace(" ", "%", $data['name']) . "%";
