@@ -7,6 +7,7 @@ use App\Models\Permission;
 use App\Models\RolePermission;
 use App\User;
 use DB;
+use Hash;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
@@ -44,7 +45,7 @@ class AuthController extends Controller {
 			$input['password'] = Hash::make($input['password']);
 			User::create($input);
 
-			return response()->json(['status' => 'error', 'message' => 'Create Account successfully!']);
+			return response()->json(['status' => 'success', 'message' => 'Create Account successfully!']);
 
 		} catch (\Exception $e) {
 			\Log::info($e);
