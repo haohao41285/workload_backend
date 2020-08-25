@@ -367,7 +367,7 @@ class TaskController extends Controller {
 				return response()->json(['status' => 'success', 'message' => 'Extend Task Successfully!', 'mail' => '0', 'tasks' => $tasks]);
 			} else {
 				$input['expired'] = $input['expired_date'];
-				$input['token'] = Hash::make('Vietguys' . $input['expired']);
+				$input['token'] = \Hash::make('Vietguys' . $input['expired']);
 				$extend = ExtendTask::create($input);
 				$follower_id = $extend->task->follower;
 				$follower = User::find($follower_id);
@@ -376,17 +376,13 @@ class TaskController extends Controller {
 					'name' => $follower->name,
 					'subject' => '[INTERNAL]-Yêu cầu gia hạn Task' . $extend->task->name,
 					'view' => 'mail.request_extend',
-					'link' => ENV('REAL_DOMAIL') . "task-request?token=" . $input['token'],
+					'link' => env('REAL_DOMAIN') . "task-request?token=" . $input['token'],
 				];
-				// \Mail::send($job_arr['view'], $job_arr, function ($m) use ($job_arr) {
-				// 	$m->from(env('MAIL_USERNAME'));
-				// 	$m->to($job_arr['reciever_email'], $job_arr['name'])->subject($job_arr['subject']);
-				// });
 				$addSpreadSheetJob = (new MailRequestExtendTaskJob($job_arr))->delay(Carbon::now()->addSeconds(10));
 				dispatch($addSpreadSheetJob);
 
 				DB::commit();
-				return response()->json(['status' => 'success', 'message' => "Send Request Successfully", 'tasks' => $tasks, 'mail' => 1]);
+				return response()->json(['status' => 'success', 'message' => "Send Request Successfully", 'mail' => 1]);
 			}
 
 		} catch (\Exception $e) {
