@@ -1,0 +1,27 @@
+image: hitmanbabyvn/php:7.3-cli
+
+variables:
+  DEPLOY_HOST: 'deployer@27.71.234.19'
+
+before_script:
+  - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+  - mkdir -p ~/.ssh
+  - eval $(ssh-agent -s)
+  - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+  # Add the private SSH key to the build environment    
+  - ssh-add <(echo "$SSH_PRIVATE_KEY")
+
+stages:  
+  - deploy
+  
+deploy_rc:
+  stage: deploy
+  variables:
+    DEPLOY_FOLDER: 'todo.vietguys.biz'
+  script:
+    - echo "Deploy to rc server"
+    - composer install
+    - rsync -hrvze "ssh -p1984" . ${DEPLOY_HOST}:${DEPLOY_FOLDER}
+    # - ssh -p1984 $DEPLOY_HOST "chmod -R 777 ${DEPLOY_FOLDER}/bootstrap/cache"
+    # - ssh -p1984 $DEPLOY_HOST "chmod -R 777 ${DEPLOY_FOLDER}/storage"
+    # - ssh -p1984 $DEPLOY_HOST "chown -R deployer:nginx ${DEPLOY_FOLDER}"
