@@ -13,6 +13,40 @@ todo.vietguys.biz
 
 Just for demo
 
+### Setup Pm2 to run Queue
+
+Install PM2
+
+```bash
+sudo npm i -g pm2
+```
+Configure PM2 file for Laravel queue
+Create laravel-queue-worker.yml file on the root of the Laravel project and put the following code.
+
+```bash
+apps:
+  - name: laravel-queue-worker
+    script: artisan
+    exec_mode: fork
+    interpreter: php
+    instances: 1
+    args:
+      - queue:work
+      - --tries=5
+      - --sleep=1
+```
+
+Run and Monitor queue from PM2
+
+```bash
+pm2 start laravel-queue-worker.yml
+```
+View log and monitor the queue process.
+
+```bash
+pm2 logs laravel-queue-worker
+```
+
 ### PHP Extensions
 
 Please change version according to your development server or use __IaC__ to manage all your configuration.
@@ -95,6 +129,19 @@ MAIL_PASSWORD={your_mailservice_password}
 MAIL_ENCRYPTION=tls
 MAIL_FROM_NAME={your_name ex: VietGuys}
 
+```
+
+### Update Domail Frontend
+Defaul local: http://localhost:4200/#/
+
+```bash
+REAL_DOMAIN={your_frontend_domain}
+```
+### Update Cors URL in App\Http\Middleware\cors.php
+default_origin_frontend_local: http://localhost:4200
+
+```bash
+header('Access-Control-Allow-Origin', {origin_url_frontend})
 ```
 
 Generate laravel Application key
