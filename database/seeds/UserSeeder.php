@@ -20,7 +20,7 @@ class UserSeeder extends Seeder
        	'full_name' => 'Nguyen Van Admin',
        	'email' => 'admin@vietguys.biz',
        	'id_trello' => 'empty',
-       	'password' => Hash::make('Admin123456@');
+       	'password' => Hash::make('Admin123456@')
        	'id_role' => 1
        ]);
 
